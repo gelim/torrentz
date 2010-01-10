@@ -1,0 +1,17 @@
+This python script parses www.torrentz and affiliate for BitTorrent links and download them to a local directory.
+Usually it can be the rtorrent listenning directory so that torrents are automatically loaded.
+
+usage: torrentz.py search_query team tracker
+ * search_query: double-quoted strings separated with spaces, e.g "Dollhouse s02e10"
+ * team: torrent team or none for all, e.g: eztv
+ * tracker: torrent site, e.g: bt-chat, thepiratebay, ...
+
+Example:
+$ python torrentz.py "linux iso" none tpb
+0:	Linux Mint 8 Helena iso                            		 (688 Mb) S: 637  P: 50
+1:	Ubuntu v9 04 desktop amd64 CD iso FINAL            		 (696 Mb) S: 216  P: 4
+2:	ubuntu 8 10 desktop i386 iso                       		 (698 Mb) S: 132  P: 2
+3:	Linux Mint 8 Universal \\Helena\\ iso            		 (1070 Mb) S: 105  P: 16
+4:	CrunchBang Linux 9 04 01 32bit crunchbang 9 04 01  		 (620 Mb) S: 60  P: 18
+5:	kubuntu 8 10 desktop amd64 iso                     		 (695 Mb) S: 7  P: 1
+Quel torrernt recuperer ? : _
