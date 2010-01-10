@@ -162,12 +162,12 @@ def main():
 	if webtracker == "bt-chat":
 		torrent = trackerget("http://www.bt-chat.com", "a href=\"(download\.php.*?)>", page)
 		torrent = torrent.replace('"', '')
-		torrent = "http://www.bt-chat.com/"+torrent
+		if torrent != '': torrent = "http://www.bt-chat.com/"+torrent
 	if webtracker == "tpb":
 		torrent = trackerget("http://thepiratebay.org", "(http://torrents\.thepiratebay\.org/.*?\.torrent)", page)
 	if webtracker == "btmon":
 		torrent = trackerget("http://www.btmon.com", "a href=\"(.*?\.torrent)", page)
-		torrent = "http://www.btmon.com/"+torrent
+		if torrent != '': torrent = "http://www.btmon.com/"+torrent
 	if DEBUG: print torrent
 
 	if torrent != '': torrentget(torrent, destdir+"/"+title+".torrent")
