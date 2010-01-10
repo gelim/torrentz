@@ -100,7 +100,8 @@ def torrentget(torrent, filename):
 	try:
 		if DEBUG: print torrent
 		torrent = torrent.replace('\t', '')
-		req = urllib2.Request(torrent)
+		torrent_quoted = 'http:'+urllib.quote(torrent[5:]) # urllib2.urlopen assumes url is sane, instead of urllib.urlopen
+		req = urllib2.Request(torrent_quoted)              # so we do the job manually
 		referer = '/'.join(torrent.split('/')[:3])
 		if DEBUG: print "referer:", referer
 		req.add_header('Referer', referer)
@@ -187,7 +188,12 @@ def main():
         if torrent != '':
                 ret = torrentget("http://"+torrent, destdir+"/"+title+".torrent")
                 if ret == 0: print "OK."; sys.exit(0)
-	
+        os.write(sys.stdout.fileno(), "Trying vertor... ")
+        torrent = trackerget("http://www.vertor.com", "(http://www.vertor.com/.*?mod=download.*?id=\d+)", page)
+        if torrent != '':
+                ret = torrentget(torrent, destdir+"/"+title+".torrent")
+                if ret == 0: print "OK."; sys.exit(0)
+
 if __name__ == "__main__":
 	main()
 	
