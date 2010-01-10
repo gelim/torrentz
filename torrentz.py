@@ -73,6 +73,8 @@ def trackerextracturl(match_begin, match_end, page):
 	ofs  = page[begin:].find(match_end)
 	if DEBUG: print "ofs:", ofs
 	if begin == -1 or ofs == -1:
+		print "Problem during url extraction :"
+		print bcolors.FAIL+page.split('\n')[0]+bcolors.ENDC
 		return ''
 	else:
 		return page[begin:begin+ofs]
@@ -86,10 +88,7 @@ def trackerget(match_url, match_begin, match_end, page):
 	if url:
 		page = urllib.urlopen(url)
 		torrent = trackerextracturl(match_begin, match_end, page.read())
-		if torrent == '':
-			print "Sorry no url extraction worked :-("
 		return torrent
-
 	else:
 		print "Sorry no tracker found in torrentz index :-("
 	return ''
@@ -172,28 +171,7 @@ def main():
 		torrent = trackerget("http://thepiratebay.org", "http://torrent.thepiratebay.org", ".torrent", page)
 		if DEBUG: print torrent
 
-	torrentget(torrent, destdir+"/"+title+".torrent")
-	sys.exit(0)
-
-
-	if webtracker == "tpb":
-		url = trackerfindurl("http://thepiratebay.org", page)
-		if DEBUG: print "GET %s" % url
-		if url:
-			page = urllib.urlopen(url)
-			torrent = trackerextracturl("http://torrents.thepiratebay.org", ".torrent", page.read())
-			if torrent == '':
-				print "Sorry no url extraction worked :-("
-			else:
-				torrent = torrent.replace('"', '')
-				if DEBUG: print torrent
-				else:
-					t = urllib.urlopen(torrent)
-					FILE = open(destdir+"/"+title+".torrent", "w")
-					FILE.write(t.read())
-					FILE.close()
-		else:
-			print "Sorry no tracker found in torrentz index :-("
+	if torrent != '': torrentget(torrent, destdir+"/"+title+".torrent")
 	
 if __name__ == "__main__":
 	main()
