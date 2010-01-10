@@ -1,10 +1,10 @@
-This python script parses www.torrentz and affiliate for BitTorrent links and download them to a local directory.
+This python script parses www.torrentz.com and affiliate for BitTorrent links and download them to a local directory.
 Usually it can be the rtorrent listenning directory so that torrents are automatically loaded.
 
 usage: torrentz.py search_query team tracker
  * search_query: double-quoted strings separated with spaces, e.g "Dollhouse s02e10"
  * team: torrent team or none for all, e.g: eztv
- * tracker: torrent site, e.g: bt-chat, thepiratebay, ...
+ * tracker: torrent site, e.g: bt-chat, tpb, ...
 
 Example:
 $ python torrentz.py "linux iso" none tpb
