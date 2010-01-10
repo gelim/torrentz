@@ -77,6 +77,29 @@ def trackerextracturl(match_begin, match_end, page):
 	else:
 		return page[begin:begin+ofs]
 
+def trackerget(match_url, match_begin, match_end, page):
+	global DEBUG
+	if DEBUG: print "trackerget(%s, %s, %s, page)" % (match_url, match_begin, match_end)
+	url = trackerfindurl(match_url, page)
+	url = url.replace('"', '')
+	if DEBUG: print "GET %s" % url
+	if url:
+		page = urllib.urlopen(url)
+		torrent = trackerextracturl(match_begin, match_end, page.read())
+		if torrent == '':
+			print "Sorry no url extraction worked :-("
+		return torrent
+
+	else:
+		print "Sorry no tracker found in torrentz index :-("
+	return ''
+
+def torrentget(torrent, filename):
+	t = urllib.urlopen(torrent)
+	FILE = open(filename, "w")
+	FILE.write(t.read())
+	FILE.close()
+
 # feed_verifiedP means give us RSS with only verified torrents and sorted by descending peers numbers
 # any other filter can be constructed via this simple syntax (i.e: verifiedS, gives only verified in HTML sorted by size)
 
@@ -140,27 +163,19 @@ def main():
 	page = trackers.read()
 	
 	if webtracker == "bt-chat":
-		url = trackerfindurl("http://www.bt-chat.com", page)
-		url = url.replace('"', '')
-		if DEBUG: print "GET %s" % url
-		if url:
-			page = urllib.urlopen(url)
-			torrent = trackerextracturl("download.php", ">", page.read())
-			if torrent == '':
-				print "Sorry no url extraction worked :-("
-			else:
-				torrent = torrent.replace('"', '')
-				torrent = "http://www.bt-chat.com/"+torrent
-				if DEBUG:
-					print torrent
-				else:
-					t = urllib.urlopen(torrent)
-					FILE = open(destdir+"/"+title+".torrent", "w")
-					FILE.write(t.read())
-					FILE.close()
-		else:
-			print "Sorry no tracker found in torrentz index :-("
-	
+		torrent = trackerget("http://www.bt-chat.com", "download.php", ">", page)
+		torrent = torrent.replace('"', '')
+		torrent = "http://www.bt-chat.com/"+torrent
+		if DEBUG: print torrent
+
+	if webtracker == "tpb":
+		torrent = trackerget("http://thepiratebay.org", "http://torrent.thepiratebay.org", ".torrent", page)
+		if DEBUG: print torrent
+
+	torrentget(torrent, destdir+"/"+title+".torrent")
+	sys.exit(0)
+
+
 	if webtracker == "tpb":
 		url = trackerfindurl("http://thepiratebay.org", page)
 		if DEBUG: print "GET %s" % url
