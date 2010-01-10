@@ -2,7 +2,7 @@ This python script parses www.torrentz.com and affiliate for BitTorrent links an
 Usually it can be the rtorrent listenning directory so that torrents are automatically loaded.
 
 usage: torrentz.py search_query team tracker
- * search_query: double-quoted strings separated with spaces, e.g "Dollhouse s02e10"
+ * search_query: double-quoted strings separated with spaces, e.g "google os"
  * team: torrent team or none for all, e.g: eztv
  * tracker: torrent site, e.g: bt-chat, tpb, ...
 
