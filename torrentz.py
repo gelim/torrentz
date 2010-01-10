@@ -11,6 +11,7 @@
 import urllib,feedparser,sys,os,getopt,re
 
 DEBUG=0
+string_max = 50
 
 class bcolors:
     HEADER = '\033[95m'
@@ -32,9 +33,10 @@ class bcolors:
 	slef.BOLD = ''
 
 def usage():
-	print "usage: %s [-v|--verbose] [-h|--help] [-d|--destdir] [-t|--team] search_query" % sys.argv[0]
+	print "usage: %s [-v|--verbose] [-h|--help] [-n|--no-verified] [-d|--destdir] [-t|--team] search_query" % sys.argv[0]
 	print " * verbose      : debug mode prints some internals"
 	print " * help         : this useful usage message"
+	print " * no-verified  : do not restrict search to verified torrent only"
 	print " * destdir      : the directory where we save the downloaded .torrent file"
 	print " * team         : torrent team or none for all, e.g: eztv"
 	print " * search_query : double-quoted strings separated with spaces, e.g \"linux iso\""
@@ -105,20 +107,15 @@ def torrentget(torrent, filename):
 		print e
 		return -1
 
-# feed_verifiedP means give us RSS with only verified torrents and sorted by descending peers numbers
-# any other filter can be constructed via this simple syntax (i.e: verifiedS, gives only verified in HTML sorted by size)
-
-site = "http://www.torrentz.com/feed_verifiedP"
-string_max = 50
-
 def main():
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hvd:t:T:", ["help", "debug", "team", "tracker"])
+		opts, args = getopt.getopt(sys.argv[1:], "hvnd:t:", ["help", "debug", "destdir", "no-verified", "team"])
 	except getopt.GetoptError, err:
 		print str(err)
 		usage()
 		sys.exit(2)	
 	# default args here
+	site = "http://www.torrentz.com/feed_verifiedP"
 	search = "linux iso"
 	team = "none"
 	destdir="/home/mathieu/ftp/dl/torrents"
@@ -128,6 +125,7 @@ def main():
 		if o in ("-v", "--verbose"): DEBUG = 1
 		if o in ("-d", "--destdir"): destdir = a
 		if o in ("-t", "--team")   : team = a
+		if o in ("-n", "--no-verified") : site = "http://www.torrentz.com/feedP"
 	if len(args) != 1: usage(); sys.exit(0)
 	search = args[0]
 	params = urllib.urlencode({'q' : search})
