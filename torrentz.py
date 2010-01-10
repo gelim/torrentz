@@ -8,7 +8,7 @@
 # -- (c) 2010 mathieu.geli@gmail.com
 #
 
-import urllib,feedparser,sys,os,getopt
+import urllib,feedparser,sys,os,getopt,re
 
 DEBUG=0
 
@@ -37,7 +37,7 @@ def usage():
 	print " * help         : this useful usage message"
 	print " * destdir      : the directory where we save the downloaded .torrent file"
 	print " * team         : torrent team or none for all, e.g: eztv"
-	print " * tracker      : torrent site, e.g: bt-chat, thepiratebay, ..."
+	print " * tracker      : torrent site, e.g: bt-chat, thepiratebay, btmon ..."
 	print " * search_query : double-quoted strings separated with spaces, e.g \"linux iso\""
 	print ""
 	print "Example:"
@@ -65,29 +65,27 @@ def trackerfindurl(tracker, page):
 		return page[begin:begin+ofs].split()[0]
 
 
-def trackerextracturl(match_begin, match_end, page):
+def trackerextracturl(regexp, page):
 	global DEBUG
-	if DEBUG: print "trackerextracturl(%s, %s, page)" % (match_begin, match_end)
-	begin = page.find(match_begin)
-	if DEBUG: print "begin:", begin
-	ofs  = page[begin:].find(match_end)
-	if DEBUG: print "ofs:", ofs
-	if begin == -1 or ofs == -1:
+	if DEBUG: print "trackerextracturl(%s, page)" % (regexp)
+	url = re.findall(regexp, page)
+	if DEBUG: print url
+	if url == []:
 		print "Problem during url extraction :"
 		print bcolors.FAIL+page.split('\n')[0]+bcolors.ENDC
 		return ''
 	else:
-		return page[begin:begin+ofs]
+		return url[0]
 
-def trackerget(match_url, match_begin, match_end, page):
+def trackerget(match_url, regexp, page):
 	global DEBUG
-	if DEBUG: print "trackerget(%s, %s, %s, page)" % (match_url, match_begin, match_end)
+	if DEBUG: print "trackerget(%s, %s, page)" % (match_url, regexp)
 	url = trackerfindurl(match_url, page)
 	url = url.replace('"', '')
 	if DEBUG: print "GET %s" % url
 	if url:
 		page = urllib.urlopen(url)
-		torrent = trackerextracturl(match_begin, match_end, page.read())
+		torrent = trackerextracturl(regexp, page.read())
 		return torrent
 	else:
 		print "Sorry no tracker found in torrentz index :-("
@@ -162,14 +160,15 @@ def main():
 	page = trackers.read()
 	
 	if webtracker == "bt-chat":
-		torrent = trackerget("http://www.bt-chat.com", "download.php", ">", page)
+		torrent = trackerget("http://www.bt-chat.com", "a href=\"(download\.php.*?)>", page)
 		torrent = torrent.replace('"', '')
 		torrent = "http://www.bt-chat.com/"+torrent
-		if DEBUG: print torrent
-
 	if webtracker == "tpb":
-		torrent = trackerget("http://thepiratebay.org", "http://torrent.thepiratebay.org", ".torrent", page)
-		if DEBUG: print torrent
+		torrent = trackerget("http://thepiratebay.org", "(http://torrents\.thepiratebay\.org/.*?\.torrent)", page)
+	if webtracker == "btmon":
+		torrent = trackerget("http://www.btmon.com", "a href=\"(.*?\.torrent)", page)
+		torrent = "http://www.btmon.com/"+torrent
+	if DEBUG: print torrent
 
 	if torrent != '': torrentget(torrent, destdir+"/"+title+".torrent")
 	
