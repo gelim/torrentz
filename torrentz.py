@@ -1,4 +1,4 @@
-#!/usr/bin/python env
+#!/usr/bin/python
 #
 # Automagic torrent url download
 # powered by www.torrentz.com and some urllib/feedparser magic
