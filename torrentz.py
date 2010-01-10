@@ -8,7 +8,7 @@
 # -- (c) 2010 mathieu.geli@gmail.com
 #
 
-import urllib,feedparser,sys,os,getopt,re
+import urllib,urllib2,feedparser,sys,os,getopt,re
 
 DEBUG=0
 string_max = 50
@@ -86,7 +86,7 @@ def trackerget(match_url, regexp, page):
 	if DEBUG: print "GET %s" % url
 	if url:
 		try:
-			page = urllib.urlopen(url)
+			page = urllib2.urlopen(url)
 			torrent = trackerextracturl(regexp, page.read())
 			return torrent
 		except Exception as e:
@@ -98,7 +98,13 @@ def trackerget(match_url, regexp, page):
 
 def torrentget(torrent, filename):
 	try:
-		t = urllib.urlopen(torrent)
+		if DEBUG: print torrent
+		torrent = torrent.replace('\t', '')
+		req = urllib2.Request(torrent)
+		referer = '/'.join(torrent.split('/')[:3])
+		if DEBUG: print "referer:", referer
+		req.add_header('Referer', referer)
+		t = urllib2.urlopen(req)
 		FILE = open(filename, "w")
 		FILE.write(t.read())
 		FILE.close()
@@ -129,7 +135,7 @@ def main():
 	if len(args) != 1: usage(); sys.exit(0)
 	search = args[0]
 	params = urllib.urlencode({'q' : search})
-	f = urllib.urlopen(site + "?%s" % params)
+	f = urllib2.urlopen(site + "?%s" % params)
 	feed = feedparser.parse(f.read())
 	item_num = feed["items"].__len__()
 	if item_num == 0: print "Sorry, no torrents found."; sys.exit(0)
@@ -153,10 +159,10 @@ def main():
 	torrent = sys.stdin.readline()
 	if torrent.strip() == "q": print "Bye."; sys.exit(0)
 	trackerindex = feed['items'][int(torrent)]['link']
-	title = feed['items'][int(torrent)]['title'].replace(' ', '_')
+	title = feed['items'][int(torrent)]['title'].replace(' ', '_').replace('/', '_')
 
 	if DEBUG: print "GET %s" % trackerindex
-	trackers = urllib.urlopen(trackerindex)
+	trackers = urllib2.urlopen(trackerindex)
 
 	page = trackers.read()
 
@@ -174,10 +180,13 @@ def main():
 	os.write(sys.stdout.fileno(), "Trying btmon... ")
 	torrent = trackerget("http://www.btmon.com", "a href=\"(.*?\.torrent)", page)
 	if torrent != '':
-		ret = torrentget("http://ww.btmon.com/"+torrent, destdir+"/"+title+".torrent")
+		ret = torrentget("http://www.btmon.com/"+torrent, destdir+"/"+title+".torrent")
 		if ret == 0: print "OK."; sys.exit(0)
-	if DEBUG: print torrent
-
+	os.write(sys.stdout.fileno(), "Trying monova... ")
+        torrent = trackerget("http://www.monova.org", "(monova.org/download.*?\.torrent)", page)
+        if torrent != '':
+                ret = torrentget("http://"+torrent, destdir+"/"+title+".torrent")
+                if ret == 0: print "OK."; sys.exit(0)
 	
 if __name__ == "__main__":
 	main()
