@@ -32,16 +32,15 @@ class bcolors:
 	slef.BOLD = ''
 
 def usage():
-	print "usage: %s [-v|--verbose] [-h|--help] [-d|--destdir] [-t|--team] [-T|--tracker] search_query" % sys.argv[0]
+	print "usage: %s [-v|--verbose] [-h|--help] [-d|--destdir] [-t|--team] search_query" % sys.argv[0]
 	print " * verbose      : debug mode prints some internals"
 	print " * help         : this useful usage message"
 	print " * destdir      : the directory where we save the downloaded .torrent file"
 	print " * team         : torrent team or none for all, e.g: eztv"
-	print " * tracker      : torrent site, e.g: bt-chat, thepiratebay, btmon ..."
 	print " * search_query : double-quoted strings separated with spaces, e.g \"linux iso\""
 	print ""
 	print "Example:"
-	print "$ python torrentz.py -d /path/to/rtorrent/autodl -T tpb \"linux iso\""
+	print "$ python torrentz.py -d /path/to/rtorrent/autodl \"linux iso\""
 	print "0:	Linux Mint 8 Helena iso                            		 (688 Mb) S: 637  P: 50"
 	print "1:	Ubuntu v9 04 desktop amd64 CD iso FINAL            		 (696 Mb) S: 216  P: 4"
 	print "2:	ubuntu 8 10 desktop i386 iso                       		 (698 Mb) S: 132  P: 2"
@@ -84,18 +83,27 @@ def trackerget(match_url, regexp, page):
 	url = url.replace('"', '')
 	if DEBUG: print "GET %s" % url
 	if url:
-		page = urllib.urlopen(url)
-		torrent = trackerextracturl(regexp, page.read())
-		return torrent
+		try:
+			page = urllib.urlopen(url)
+			torrent = trackerextracturl(regexp, page.read())
+			return torrent
+		except Exception as e:
+			print e
+			return ''
 	else:
 		print "Sorry no tracker found in torrentz index :-("
 	return ''
 
 def torrentget(torrent, filename):
-	t = urllib.urlopen(torrent)
-	FILE = open(filename, "w")
-	FILE.write(t.read())
-	FILE.close()
+	try:
+		t = urllib.urlopen(torrent)
+		FILE = open(filename, "w")
+		FILE.write(t.read())
+		FILE.close()
+		return 0
+	except Exception as e:
+		print e
+		return -1
 
 # feed_verifiedP means give us RSS with only verified torrents and sorted by descending peers numbers
 # any other filter can be constructed via this simple syntax (i.e: verifiedS, gives only verified in HTML sorted by size)
@@ -113,7 +121,6 @@ def main():
 	# default args here
 	search = "linux iso"
 	team = "none"
-	webtracker = "bt-chat"
 	destdir="/home/mathieu/ftp/dl/torrents"
 	global DEBUG
 	for o,a in opts:
@@ -121,7 +128,6 @@ def main():
 		if o in ("-v", "--verbose"): DEBUG = 1
 		if o in ("-d", "--destdir"): destdir = a
 		if o in ("-t", "--team")   : team = a
-		if o in ("-T", "--tracker"): webtracker = a
 	if len(args) != 1: usage(); sys.exit(0)
 	search = args[0]
 	params = urllib.urlencode({'q' : search})
@@ -154,23 +160,26 @@ def main():
 	if DEBUG: print "GET %s" % trackerindex
 	trackers = urllib.urlopen(trackerindex)
 
-	# on doit choisir sur quel referenceur de tracker on veut aller
-	# bt-chat ? thepiratebay ? ...
-
 	page = trackers.read()
-	
-	if webtracker == "bt-chat":
-		torrent = trackerget("http://www.bt-chat.com", "a href=\"(download\.php.*?)>", page)
-		torrent = torrent.replace('"', '')
-		if torrent != '': torrent = "http://www.bt-chat.com/"+torrent
-	if webtracker == "tpb":
-		torrent = trackerget("http://thepiratebay.org", "(http://torrents\.thepiratebay\.org/.*?\.torrent)", page)
-	if webtracker == "btmon":
-		torrent = trackerget("http://www.btmon.com", "a href=\"(.*?\.torrent)", page)
-		if torrent != '': torrent = "http://www.btmon.com/"+torrent
+
+	os.write(sys.stdout.fileno(), "Trying bt-chat... ")
+	torrent = trackerget("http://www.bt-chat.com", "a href=\"(download\.php.*?)>", page)
+	torrent = torrent.replace('"', '')
+	if torrent != '':
+		ret = torrentget("http://www.bt-chat.com/"+torrent, destdir+"/"+title+".torrent")
+		if ret == 0: print "OK."; sys.exit(0)
+	os.write(sys.stdout.fileno(), "Trying thepiratebay... ")
+        torrent = trackerget("http://thepiratebay.org", "(http://torrents\.thepiratebay\.org/.*?\.torrent)", page)
+	if torrent != '':
+		ret = torrentget(torrent, destdir+"/"+title+".torrent")
+		if ret == 0: print "OK."; sys.exit(0)
+	os.write(sys.stdout.fileno(), "Trying btmon... ")
+	torrent = trackerget("http://www.btmon.com", "a href=\"(.*?\.torrent)", page)
+	if torrent != '':
+		ret = torrentget("http://ww.btmon.com/"+torrent, destdir+"/"+title+".torrent")
+		if ret == 0: print "OK."; sys.exit(0)
 	if DEBUG: print torrent
 
-	if torrent != '': torrentget(torrent, destdir+"/"+title+".torrent")
 	
 if __name__ == "__main__":
 	main()
