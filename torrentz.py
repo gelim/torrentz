@@ -2,13 +2,12 @@
 #
 # Automagic torrent url download
 # powered by www.torrentz.com and some urllib/feedparser magic
-# FIXME: nice getopts instead of this crap
-# FIXME: regexp for string matching
 #
 # -- (c) 2010 mathieu.geli@gmail.com
 #
 
-import urllib,urllib2,feedparser,sys,os,getopt,re
+import urllib,feedparser,BeautifulSoup
+import sys,os,getopt,re
 
 DEBUG=0
 string_max = 50
@@ -52,60 +51,10 @@ def usage():
 	print "Which torrent to retrieve ? (or q to quit) : _"
 	print ""
 
-def trackerfindurl(tracker, page):
-	global DEBUG
-	if DEBUG: print "trackerfindurl(%s, page)" % tracker
-	begin = page.find(tracker)
-	if DEBUG: print "begin:", begin
-	ofs = page[begin:].find(">")
-	if DEBUG: print "ofs:", ofs
-	if begin == -1 or ofs == -1:
-		print "Sorry, no tracker link found :-("
-		return ''
-	else:
-		return page[begin:begin+ofs].split()[0]
-
-
-def trackerextracturl(regexp, page):
-	global DEBUG
-	if DEBUG: print "trackerextracturl(%s, page)" % (regexp)
-	url = re.findall(regexp, page)
-	if DEBUG: print url
-	if url == []:
-		print "Problem during url extraction :"
-		print bcolors.FAIL+page.split('\n')[0]+bcolors.ENDC
-		return ''
-	else:
-		return url[0]
-
-def trackerget(match_url, regexp, page):
-	global DEBUG
-	if DEBUG: print "trackerget(%s, %s, page)" % (match_url, regexp)
-	url = trackerfindurl(match_url, page)
-	url = url.replace('"', '')
-	if DEBUG: print "GET %s" % url
-	if url:
-		try:
-			page = urllib2.urlopen(url)
-			torrent = trackerextracturl(regexp, page.read())
-			return torrent
-		except Exception as e:
-			print e
-			return ''
-	else:
-		print "Sorry no tracker found in torrentz index :-("
-	return ''
-
 def torrentget(torrent, filename):
 	try:
 		if DEBUG: print torrent
-		torrent = torrent.replace('\t', '')
-		torrent_quoted = 'http:'+urllib.quote(torrent[5:]) # urllib2.urlopen assumes url is sane, instead of urllib.urlopen
-		req = urllib2.Request(torrent_quoted)              # so we do the job manually
-		referer = '/'.join(torrent.split('/')[:3])
-		if DEBUG: print "referer:", referer
-		req.add_header('Referer', referer)
-		t = urllib2.urlopen(req)
+		t = urllib.urlopen(torrent)
 		FILE = open(filename, "w")
 		FILE.write(t.read())
 		FILE.close()
@@ -113,6 +62,33 @@ def torrentget(torrent, filename):
 	except Exception as e:
 		print e
 		return -1
+
+def gethref(matcher, page):
+	if DEBUG: print "gethref(%s, %s)" % (matcher, page)
+	soup = BeautifulSoup.BeautifulStoneSoup(page)
+	urls=soup('a')
+	for link in urls:
+		try:
+			match = re.findall(matcher, link['href'])
+			if DEBUG: print "match: %s pour link: %s" % (match, link['href'])
+			if match:
+				return link['href']
+		except KeyError:	
+			pass
+	return False
+
+def grasp(trackers, destdir, title, trackername, baseurl, linkmatcher, urlappend):
+        os.write(sys.stdout.fileno(), "Trying %s... " % trackername)
+        trackeridx = gethref(baseurl, trackers)
+        if trackeridx:
+                trackerpage = urllib.urlopen(trackeridx)
+                torrent = gethref(linkmatcher, trackerpage)
+		if urlappend != "":
+			torrent=urlappend+torrent
+                if DEBUG: print "gethref ->", torrent
+                if torrent:
+                        ret = torrentget(torrent, destdir+"/"+title+".torrent")
+                        if ret == 0: print "OK."; sys.exit(0)
 
 def main():
 	try:
@@ -136,7 +112,7 @@ def main():
 	if len(args) != 1: usage(); sys.exit(0)
 	search = args[0]
 	params = urllib.urlencode({'q' : search})
-	f = urllib2.urlopen(site + "?%s" % params)
+	f = urllib.urlopen(site + "?%s" % params)
 	feed = feedparser.parse(f.read())
 	item_num = feed["items"].__len__()
 	if item_num == 0: print "Sorry, no torrents found."; sys.exit(0)
@@ -156,47 +132,25 @@ def main():
 			printstr = "%d:\t%s \t\t (%s) S: "+bcolors.BOLD+bcolors.RED + "%s" + bcolors.ENDC + " P: "+bcolors.BOLD+bcolors.GREEN+"%s"+bcolors.ENDC
 			print printstr % (i, title, size, seeds, peers)
 
-	os.write(sys.stdout.fileno(), "Which torrent to retrieve ? (or q to quit) : ")
+	sys.stdout.write("Which torrent to retrieve ? (or q to quit) : ")
 	torrent = sys.stdin.readline()
 	if torrent.strip() == "q": print "Bye."; sys.exit(0)
 	trackerindex = feed['items'][int(torrent)]['link']
-	title = feed['items'][int(torrent)]['title'].replace(' ', '_').replace('/', '_')
+	title = feed['items'][int(torrent)]['title'].replace(' ', '_').replace('/', '_') # formatting for saved torrent filename
 
 	if DEBUG: print "GET %s" % trackerindex
-	trackers = urllib2.urlopen(trackerindex)
+	trackers = urllib.urlopen(trackerindex)
 
-	page = trackers.read()
-
-	os.write(sys.stdout.fileno(), "Trying bt-chat... ")
-	torrent = trackerget("http://www.bt-chat.com", "a href=\"(download\.php.*?)>", page)
-	torrent = torrent.replace('"', '')
-	if torrent != '':
-		ret = torrentget("http://www.bt-chat.com/"+torrent, destdir+"/"+title+".torrent")
-		if ret == 0: print "OK."; sys.exit(0)
-	os.write(sys.stdout.fileno(), "Trying thepiratebay... ")
-        torrent = trackerget("http://thepiratebay.org", "(http://torrents\.thepiratebay\.org/.*?\.torrent)", page)
-	if torrent != '':
-		ret = torrentget(torrent, destdir+"/"+title+".torrent")
-		if ret == 0: print "OK."; sys.exit(0)
-	os.write(sys.stdout.fileno(), "Trying btmon... ")
-	torrent = trackerget("http://www.btmon.com", "a href=\"(.*?\.torrent)", page)
-	if torrent != '':
-		ret = torrentget("http://www.btmon.com/"+torrent, destdir+"/"+title+".torrent")
-		if ret == 0: print "OK."; sys.exit(0)
-	os.write(sys.stdout.fileno(), "Trying monova... ")
-        torrent = trackerget("http://www.monova.org", "(monova.org/download.*?\.torrent)", page)
-        if torrent != '':
-                ret = torrentget("http://"+torrent, destdir+"/"+title+".torrent")
-                if ret == 0: print "OK."; sys.exit(0)
-        os.write(sys.stdout.fileno(), "Trying vertor... ")
-        torrent = trackerget("http://www.vertor.com", "(http://www.vertor.com/.*?mod=download.*?id=\d+)", page)
-        if torrent != '':
-                ret = torrentget(torrent, destdir+"/"+title+".torrent")
-                if ret == 0: print "OK."; sys.exit(0)
+	grasp(trackers, destdir, title, "btchat", "http://www.bt-chat.com", "download.php", "http://www.bt-chat.com/")
+	grasp(trackers, destdir, title, "btjunkie", "http://btjunkie.org", "http://dl.btjunkie.org/torrent/.*?\.torrent", "")
+	grasp(trackers, destdir, title, "btmon", "http://www.btmon.com", "\.torrent$", "http://btmon.com/")
+	grasp(trackers, destdir, title, "tpb", "http://thepiratebay.org", "http://torrents.thepiratebay.org", "")
+	grasp(trackers, destdir, title, "h33t", "http://www.h33t.com", "download.php.*?\.torrent", "http://www.h33t.com/")
+	grasp(trackers, destdir, title, "monova", "http://www.monova.org", "monova.org/download.*\.torrent", "http://")
+	grasp(trackers, destdir, title, "vertor", "http://www.vertor.com", "http://www.vertor.com/.*?mod=download.*?id=", "")
 
 if __name__ == "__main__":
+	if BeautifulSoup.__version__ > '3.0.8':
+		sys.stderr.write("WARNING: BeautfiulSoup greather than 3.0.8 is known to crash on malformed script tags.\n")
 	main()
-	
-#trackerfindurl("http://btjunkie.org", page)
-#trackerfindurl("http://www.vertor.com", page)
 
