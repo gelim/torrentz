@@ -139,8 +139,8 @@ def main():
 	title = feed['items'][int(torrent)]['title'].replace(' ', '_').replace('/', '_') # formatting for saved torrent filename
 
 	if DEBUG: print "GET %s" % trackerindex
-	trackers = urllib.urlopen(trackerindex)
-
+	trackers = urllib.urlopen(trackerindex).read()
+	
 	grasp(trackers, destdir, title, "btchat", "http://www.bt-chat.com", "download.php", "http://www.bt-chat.com/")
 	grasp(trackers, destdir, title, "btjunkie", "http://btjunkie.org", "http://dl.btjunkie.org/torrent/.*?\.torrent", "")
 	grasp(trackers, destdir, title, "btmon", "http://www.btmon.com", "\.torrent$", "http://btmon.com/")
