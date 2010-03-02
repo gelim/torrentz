@@ -78,7 +78,7 @@ def gethref(matcher, page):
 	return False
 
 def grasp(trackers, destdir, title, trackername, baseurl, linkmatcher, urlappend):
-        os.write(sys.stdout.fileno(), "Trying %s... " % trackername)
+        os.write(sys.stdout.fileno(), "trying %s... " % trackername)
         trackeridx = gethref(baseurl, trackers)
         if trackeridx:
                 trackerpage = urllib.urlopen(trackeridx)
