@@ -146,7 +146,8 @@ def main():
 	grasp(trackers, destdir, title, "btmon", "http://www.btmon.com", "\.torrent$", "http://btmon.com/")
 	grasp(trackers, destdir, title, "tpb", "http://thepiratebay.org", "http://torrents.thepiratebay.org", "")
 	grasp(trackers, destdir, title, "h33t", "http://www.h33t.com", "download.php.*?\.torrent", "http://www.h33t.com/")
-	grasp(trackers, destdir, title, "monova", "http://www.monova.org", "monova.org/download.*\.torrent", "http://")
+        # monova disabled: fail to properly d/l .torrent, cookie session tracking ?
+	# grasp(trackers, destdir, title, "monova", "http://www.monova.org", "monova.org/download.*\.torrent", "")
 	grasp(trackers, destdir, title, "vertor", "http://www.vertor.com", "http://www.vertor.com/.*?mod=download.*?id=", "")
 
 if __name__ == "__main__":
