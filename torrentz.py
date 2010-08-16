@@ -136,6 +136,7 @@ def main():
 	torrent = sys.stdin.readline()
 	if torrent.strip() == "q": print "Bye."; sys.exit(0)
 	trackerindex = feed['items'][int(torrent)]['link']
+	trackerindex = trackerindex.replace("node21", "www.torrentz.com") # new modifiction on RSS urls -- 20100816
 	title = feed['items'][int(torrent)]['title'].replace(' ', '_').replace('/', '_') # formatting for saved torrent filename
 
 	if DEBUG: print "GET %s" % trackerindex
