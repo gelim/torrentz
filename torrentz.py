@@ -142,7 +142,7 @@ def main():
 	if DEBUG: print "GET %s" % trackerindex
 	trackers = urllib.urlopen(trackerindex).read()
 	
-	grasp(trackers, destdir, title, "btchat", "http://www.bt-chat.com", "download.php", "http://www.bt-chat.com/")
+	#grasp(trackers, destdir, title, "btchat", "http://www.bt-chat.com", "download.php", "http://www.bt-chat.com/") # parsing problem, spit HTML...
 	grasp(trackers, destdir, title, "btjunkie", "http://btjunkie.org", "http://dl.btjunkie.org/torrent/.*?\.torrent", "")
 	grasp(trackers, destdir, title, "btmon", "http://www.btmon.com", "\.torrent$", "http://btmon.com/")
 	grasp(trackers, destdir, title, "tpb", "http://thepiratebay.org", "http://torrents.thepiratebay.org", "")
