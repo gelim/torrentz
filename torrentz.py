@@ -9,6 +9,11 @@
 import urllib,feedparser,BeautifulSoup
 import sys,os,getopt,re
 
+class AppURLopener(urllib.FancyURLopener):
+    version = "Mozilla/5.0 (X11; U; Linux x86_64; en-US) AppleWebKit/532.0 (KHTML, like Gecko) Chrome/4.0.202.0 Safari/532.0"
+
+urllib._urlopener = AppURLopener()
+
 DEBUG=0
 string_max = 50
 
@@ -98,7 +103,8 @@ def main():
 		usage()
 		sys.exit(2)	
 	# default args here
-	site = "http://www.torrentz.com/feed_verifiedP"
+	domain = "http://www.torrentz.eu"
+	site = domain+"/feed_verifiedP"
 	search = "linux iso"
 	team = "none"
 	destdir="/home/mathieu/ftp/dl/torrents"
@@ -108,7 +114,7 @@ def main():
 		if o in ("-v", "--verbose"): DEBUG = 1
 		if o in ("-d", "--destdir"): destdir = a
 		if o in ("-t", "--team")   : team = a
-		if o in ("-n", "--no-verified") : site = "http://www.torrentz.com/feedP"
+		if o in ("-n", "--no-verified") : site = domain+"/feedP"
 	if len(args) != 1: usage(); sys.exit(0)
 	search = args[0]
 	params = urllib.urlencode({'q' : search})
@@ -143,6 +149,7 @@ def main():
 	trackers = urllib.urlopen(trackerindex).read()
 	
 	#grasp(trackers, destdir, title, "btchat", "http://www.bt-chat.com", "download.php", "http://www.bt-chat.com/") # parsing problem, spit HTML...
+	grasp(trackers, destdir, title, "bitsnoop", "http://bitsnoop.com", "http://torrage.com/torrent/.*?\.torrent", "")
 	grasp(trackers, destdir, title, "btjunkie", "http://btjunkie.org", "http://dl.btjunkie.org/torrent/.*?\.torrent", "")
 	grasp(trackers, destdir, title, "btmon", "http://www.btmon.com", "\.torrent$", "http://btmon.com/")
 	grasp(trackers, destdir, title, "tpb", "http://thepiratebay.org", "http://torrents.thepiratebay.org", "")
