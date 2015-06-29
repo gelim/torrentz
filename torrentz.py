@@ -34,7 +34,7 @@ class bcolors:
         self.WARNING = ''
         self.FAIL = ''
         self.ENDC = ''
-	slef.BOLD = ''
+	self.BOLD = ''
 
 def usage():
 	print "usage: %s [-v|--verbose] [-h|--help] [-n|--no-verified] [-d|--destdir] [-t|--team] search_query" % sys.argv[0]
